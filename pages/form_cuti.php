@@ -1,7 +1,8 @@
 <?php require_once __DIR__ . '/../database.php'; ?>
 <div class="bg-white p-8 rounded-lg shadow-lg w-full">
     <h1 class="text-2xl font-bold mb-6 text-gray-800">Formulir Input Cuti</h1>
-    <form id="formCuti" action="proses_cuti.php" method="POST">
+    <!-- UPDATE: Ditambahkan enctype="multipart/form-data" -->
+    <form id="formCuti" action="proses_cuti.php" method="POST" enctype="multipart/form-data">
         <fieldset class="border p-4 rounded-md shadow-lg mb-6">
             <legend class="text-lg font-semibold text-gray-700 px-2">1. Data Pegawai</legend>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -34,7 +35,6 @@
                         <select id="jenis_cuti" name="jenis_cuti_id" class="block w-full border-gray-300 rounded-md shadow-sm" required>
                             <option value="">-- Pilih Jenis Cuti --</option>
                             <?php
-                            // Mengambil data dari tabel master jenis_cuti
                             $sql_jenis_cuti = "SELECT id, nama_cuti, max_durasi, tipe_perhitungan FROM jenis_cuti ORDER BY id";
                             $result_jenis_cuti = $conn->query($sql_jenis_cuti);
                             while($jenis = $result_jenis_cuti->fetch_assoc()) {
@@ -52,10 +52,25 @@
                         </div>
                     </div>
                 </fieldset>
+                
+                <!-- UPDATE: Fieldset Alasan & Bukti Cuti -->
                 <fieldset class="border p-4 rounded-md shadow-lg mb-6">
-                    <legend class="text-lg font-semibold text-gray-700 px-2">3. Alasan Cuti</legend>
+                    <legend class="text-lg font-semibold text-gray-700 px-2">3. Alasan & Bukti Cuti</legend>
                     <div class="mt-4">
+                        <label for="alasan_cuti" class="block text-sm font-medium text-gray-700 mb-1">Alasan Cuti</label>
                         <textarea id="alasan_cuti" name="alasan_cuti" rows="4" class="block w-full border-gray-300 rounded-md shadow-sm" placeholder="Tuliskan alasan lengkap..." required></textarea>
+                    </div>
+                    <!-- Input File Baru -->
+                    <div class="mt-4">
+                        <label for="bukti_cuti" class="block text-sm font-medium text-gray-700 mb-1">Upload Dokumen Pendukung (Opsional)</label>
+                        <p class="text-xs text-gray-500 mb-2">Format: PDF/JPG/PNG. Maks 2MB.</p>
+                        <input type="file" id="bukti_cuti" name="bukti_cuti" accept=".pdf,.jpg,.jpeg,.png" class="block w-full text-sm text-slate-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-indigo-50 file:text-indigo-700
+                          hover:file:bg-indigo-100
+                        "/>
                     </div>
                 </fieldset>
             </div>
@@ -107,4 +122,3 @@
         </div>
     </form>
 </div>
-                            

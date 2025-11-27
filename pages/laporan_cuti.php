@@ -1,30 +1,19 @@
 <?php
-// Menghubungkan ke file database untuk melakukan query
+// Menghubungkan ke file database
 require_once __DIR__ . '/../database.php';
 
-// --- LOGIKA UNTUK FILTER WAKTU ---
+// --- LOGIKA FILTER WAKTU ---
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 $where_date_clause = '';
 switch ($filter) {
-    case '7d':
-        $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-        break;
-    case '1m':
-        $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-        break;
-    case '3m':
-        $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 3 MONTH)";
-        break;
-    case '1y':
-        $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-        break;
-    case 'all':
-    default:
-        $where_date_clause = '';
-        break;
+    case '7d': $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 7 DAY)"; break;
+    case '1m': $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 1 MONTH)"; break;
+    case '3m': $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 3 MONTH)"; break;
+    case '1y': $where_date_clause = "AND c.tgl_pengajuan >= DATE_SUB(NOW(), INTERVAL 1 YEAR)"; break;
+    default: $where_date_clause = ''; break;
 }
 
-// --- LOGIKA UNTUK SORTING ---
+// --- LOGIKA SORTING ---
 $allowed_sort_columns = [
     'nama' => 'p.nama',
     'unit_kerja' => 'p.unit_kerja',
@@ -38,7 +27,6 @@ $sort_key = isset($_GET['sort']) && array_key_exists($_GET['sort'], $allowed_sor
 $sort_column = $allowed_sort_columns[$sort_key];
 $sort_order = isset($_GET['order']) && in_array(strtolower($_GET['order']), ['asc', 'desc']) ? strtolower($_GET['order']) : 'desc';
 
-// Fungsi untuk membuat link sorting
 function generateSortLinkLaporan($key, $display_text, $current_key, $current_order, $current_filter) {
     $order_for_link = ($current_key == $key && $current_order == 'asc') ? 'desc' : 'asc';
     $icon = '';
@@ -54,6 +42,7 @@ function generateSortLinkLaporan($key, $display_text, $current_key, $current_ord
 $search_query = isset($_GET['search']) ? $_GET['search'] : '';
 $search_term = "%" . $search_query . "%";
 
+// UPDATE QUERY: Menambahkan c.bukti_cuti ke dalam SELECT
 $sql = "
     SELECT
         c.id,
@@ -65,6 +54,7 @@ $sql = "
         c.tgl_selesai,
         c.lama_cuti,
         c.alasan_cuti,
+        c.bukti_cuti,
         c.tgl_pengajuan,
         c.pertimbangan_atasan
     FROM cuti c
@@ -78,29 +68,16 @@ if (!empty($search_query)) {
 $sql .= " ORDER BY $sort_column " . strtoupper($sort_order);
 
 $stmt = $conn->prepare($sql);
-
 if (!empty($search_query)) {
     $stmt->bind_param("ssss", $search_term, $search_term, $search_term, $search_term);
 }
-
 $stmt->execute();
 $result = $stmt->get_result();
 $all_data = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
-
-// --- KALKULASI DATA RINGKASAN ---
 $total_records = count($all_data);
-$total_hari_cuti = 0;
-$unique_pegawai = [];
-foreach ($all_data as $row) {
-    $total_hari_cuti += $row['lama_cuti'];
-    if (!in_array($row['nip'], $unique_pegawai)) {
-        $unique_pegawai[] = $row['nip'];
-    }
-}
-$total_unique_pegawai = count($unique_pegawai);
-
 ?>
+
 <div class="bg-white p-8 rounded-lg shadow-lg w-full">
     <!-- Header Halaman -->
     <div class="no-print flex flex-wrap justify-between items-center mb-6 gap-4">
@@ -109,13 +86,11 @@ $total_unique_pegawai = count($unique_pegawai);
             <p class="text-gray-600">Menampilkan seluruh riwayat cuti dari sistem.</p>
         </div>
         <div class="flex space-x-2">
-            <a href="export_laporan.php?<?php echo http_build_query($_GET); ?>" class="bg-blue-800 hover:bg-blue-950 text-white font-bold py-2 px-4 rounded-md flex items-center shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Export ke Excel
+            <a href="export_laporan.php?<?php echo http_build_query($_GET); ?>" class="bg-blue-800 hover:bg-blue-950 text-white font-bold py-2 px-4 rounded-md flex items-center shadow-md transition duration-150 ease-in-out">
+                <i class="fas fa-file-excel mr-2 text-lg"></i> Export ke Excel
             </a>
-            <button onclick="window.print()" class="bg-green-600 hover:bg-green-950 text-white font-bold py-2 px-4 rounded-md flex items-center shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-                Cetak Laporan
+            <button onclick="window.print()" class="bg-green-600 hover:bg-green-950 text-white font-bold py-2 px-4 rounded-md flex items-center shadow-md transition duration-150 ease-in-out">
+                <i class="fas fa-print mr-2 text-lg"></i> Cetak Laporan
             </button>
         </div>
     </div>
@@ -127,7 +102,9 @@ $total_unique_pegawai = count($unique_pegawai);
             <label for="search_laporan" class="block text-sm font-medium text-gray-700 mb-1">Cari Laporan</label>
             <div class="flex items-center shadow-md rounded-md">
                 <input type="text" id="search_laporan" name="search" class="block w-full border-gray-300 rounded-l-md py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ketik Nama, NIP, Unit Kerja..." value="<?php echo htmlspecialchars($search_query); ?>">
-                <button type="submit" class="bg-blue-800 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">Cari</button>
+                <button type="submit" class="bg-blue-800 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-150 ease-in-out">
+                    <i class="fas fa-search mr-1"></i>
+                </button>
             </div>
         </form>
         <form id="filter-form" action="index.php" method="GET">
@@ -144,14 +121,16 @@ $total_unique_pegawai = count($unique_pegawai);
         </form>
     </div>
 
-    <!-- Header Cetak -->
-    <div class="print-only mb-6 text-center">
-        <h1 class="text-xl font-bold">Laporan Rekapitulasi Cuti Pegawai</h1>
-        <h2 class="text-lg">Dinas Pendidikan Kota Bogor</h2>
-        <p class="text-sm">Dicetak pada: <?php echo date('d F Y'); ?></p>
+    <!-- Header Cetak (Hanya muncul saat print) -->
+    <div class="print-only text-center mb-4">
+        <h2 style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">DINAS PENDIDIKAN KOTA BOGOR</h2>
+        <h3 style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">BIDANG SMP</h3>
+        <h4 style="font-size: 12pt; font-weight: bold; margin-bottom: 20px;">LAPORAN REKAP CUTI PEGAWAI</h4>
+        <p style="text-align: left; margin-bottom: 5px;">Dicetak pada: <?php echo date('d F Y'); ?></p>
+        <hr style="border: 1px solid black; margin-bottom: 20px;">
     </div>
 
-    <!-- Kontainer Tabel Scrollable -->
+    <!-- Tabel Laporan -->
     <div class="overflow-auto h-[60vh] border rounded-lg shadow-inner table-scroll-container">
         <table id="laporan-cuti-table" class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50 sticky top-0">
@@ -160,6 +139,8 @@ $total_unique_pegawai = count($unique_pegawai);
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('nama', 'Nama / NIP', $sort_key, $sort_order, $filter); ?></th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('unit_kerja', 'Unit Kerja', $sort_key, $sort_order, $filter); ?></th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('jenis_cuti', 'Jenis Cuti', $sort_key, $sort_order, $filter); ?></th>
+                    <!-- Header Kolom Dokumen Baru -->
+                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider no-print">Dokumen</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('pengajuan', 'Tgl Pengajuan', $sort_key, $sort_order, $filter); ?></th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('durasi', 'Durasi', $sort_key, $sort_order, $filter); ?></th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLinkLaporan('status', 'Status', $sort_key, $sort_order, $filter); ?></th>
@@ -173,13 +154,36 @@ $total_unique_pegawai = count($unique_pegawai);
                     foreach($all_data as $row) {
                 ?>
                         <tr class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-2 py-2 whitespace-nowrap"><?php echo $nomor++; ?></td>
-                            <td class="px-3 py-2 whitespace-nowrap"><div class="font-medium text-gray-900"><?php echo htmlspecialchars($row['nama']); ?></div><div class="text-gray-500"><?php echo htmlspecialchars($row['nip']); ?></div></td>
-                            <td class="px-3 py-2 whitespace-nowrap text-gray-900"><?php echo htmlspecialchars($row['unit_kerja']); ?></td>
-                            <td class="px-3 py-2 whitespace-nowrap text-gray-900"><?php echo htmlspecialchars($row['nama_cuti']); ?></td>
-                            <td class="px-3 py-2 whitespace-nowrap text-gray-500"><?php echo $row['tgl_pengajuan'] ? date('d/m/Y', strtotime($row['tgl_pengajuan'])) : 'N/A'; ?></td>
-                            <td class="px-3 py-2 whitespace-nowrap"><div class="text-gray-900"><?php echo htmlspecialchars($row['lama_cuti']); ?> hari</div><div class="text-gray-500"><?php echo date('d/m/y', strtotime($row['tgl_mulai'])) . ' - ' . date('d/m/y', strtotime($row['tgl_selesai'])); ?></div></td>
-                            <td class="px-3 py-2 whitespace-nowrap">
+                            <td class="px-2 py-2 whitespace-nowrap align-top"><?php echo $nomor++; ?></td>
+                            <td class="px-3 py-2 whitespace-nowrap align-top">
+                                <div class="font-medium text-gray-900"><?php echo htmlspecialchars($row['nama']); ?></div>
+                                <div class="text-gray-500"><?php echo htmlspecialchars($row['nip']); ?></div>
+                            </td>
+                            <td class="px-3 py-2 whitespace-normal align-top text-gray-900"><?php echo htmlspecialchars($row['unit_kerja']); ?></td>
+                            <td class="px-3 py-2 whitespace-normal align-top text-gray-900"><?php echo htmlspecialchars($row['nama_cuti']); ?></td>
+                            
+                            <!-- Isi Kolom Dokumen (Hanya Tampil di Web) -->
+                            <td class="px-3 py-2 whitespace-nowrap text-center align-top no-print">
+                                <?php if (!empty($row['bukti_cuti'])): ?>
+                                    <a href="uploads/bukti_cuti/<?php echo htmlspecialchars($row['bukti_cuti']); ?>" 
+                                       target="_blank" 
+                                       class="text-blue-600 hover:text-blue-800 underline text-xs font-bold flex flex-col items-center transition duration-150 ease-in-out" title="Lihat Dokumen">
+                                        <i class="fas fa-file-alt text-lg mb-1"></i>
+                                        Lihat
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-gray-400 text-xs">-</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td class="px-3 py-2 whitespace-nowrap align-top text-gray-500"><?php echo $row['tgl_pengajuan'] ? date('d/m/Y', strtotime($row['tgl_pengajuan'])) : 'N/A'; ?></td>
+                            <td class="px-3 py-2 whitespace-nowrap align-top">
+                                <div class="text-gray-900"><?php echo htmlspecialchars($row['lama_cuti']); ?> hari</div>
+                                <div class="text-gray-500 text-xs mt-1">
+                                    <?php echo date('d/m/y', strtotime($row['tgl_mulai'])) . ' - ' . date('d/m/y', strtotime($row['tgl_selesai'])); ?>
+                                </div>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap align-top">
                                 <?php 
                                 $status = htmlspecialchars($row['pertimbangan_atasan']);
                                 $badge_color = 'bg-gray-100 text-gray-800';
@@ -189,18 +193,22 @@ $total_unique_pegawai = count($unique_pegawai);
                                 ?>
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $badge_color; ?>"><?php echo $status; ?></span>
                             </td>
-                            <td class="px-3 py-2 whitespace-nowrap font-medium flex items-center space-x-2 no-print">
-                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-cuti-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100">Edit</button>
+                            <td class="px-3 py-2 whitespace-nowrap font-medium flex items-center space-x-2 no-print align-top">
+                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-cuti-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100 transition duration-150 ease-in-out" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <form action="hapus_cuti.php" method="POST" class="inline delete-form">
                                     <input type="hidden" name="cuti_id" value="<?php echo $row['id']; ?>">
-                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="cuti" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100">Hapus</button>
+                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="cuti" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100 transition duration-150 ease-in-out" title="Hapus">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </form>
                             </td>
                         </tr>
                 <?php
                     }
                 } else {
-                    echo "<tr><td colspan='8' class='text-center px-6 py-4'>Tidak ada data cuti yang cocok dengan kriteria Anda.</td></tr>";
+                    echo "<tr><td colspan='9' class='text-center px-6 py-4'>Tidak ada data cuti yang cocok dengan kriteria Anda.</td></tr>";
                 }
                 ?>
             </tbody>
@@ -208,6 +216,7 @@ $total_unique_pegawai = count($unique_pegawai);
     </div>
 </div>
 
+<!-- Modal Edit & Hapus (Sama seperti sebelumnya, tidak diubah) -->
 <!-- Modal Edit Cuti -->
 <div id="edit-cuti-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden no-print">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
@@ -289,15 +298,46 @@ $total_unique_pegawai = count($unique_pegawai);
     </div>
 </div>
 
-<!-- CSS Khusus untuk Mencetak -->
+<!-- CSS Khusus untuk Mencetak (Diperbarui untuk tampilan standar resmi) -->
 <style>
     .print-only { display: none; }
+    
     @media print {
-        body > nav, .no-print { display: none !important; }
-        .print-only { display: block; }
-        body > main { padding: 0 !important; margin: 1cm !important; }
-        .bg-white { box-shadow: none !important; border: none !important; padding: 0 !important; }
-        
+        @page {
+            size: landscape;
+            margin: 1cm;
+        }
+
+        /* Sembunyikan elemen navigasi dan tombol yang tidak perlu */
+        body > nav, 
+        .no-print, 
+        #filter-form,
+        .edit-cuti-btn,
+        .delete-btn,
+        .table-scroll-container::-webkit-scrollbar { 
+            display: none !important; 
+        }
+
+        /* Tampilkan elemen khusus cetak */
+        .print-only { 
+            display: block !important; 
+        }
+
+        /* Reset style kontainer utama agar pas di kertas */
+        body > main { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            max-width: 100% !important;
+        }
+
+        .bg-white { 
+            box-shadow: none !important; 
+            border: none !important; 
+            padding: 0 !important; 
+            background-color: white !important;
+        }
+
+        /* Reset tabel container */
         .table-scroll-container {
             height: auto !important;
             max-height: none !important;
@@ -305,26 +345,64 @@ $total_unique_pegawai = count($unique_pegawai);
             border: none !important;
             box-shadow: none !important;
         }
-        
+
+        /* Style Tabel Standar Resmi */
         table { 
             width: 100%; 
             border-collapse: collapse; 
-            font-size: 9pt; 
-            page-break-inside: auto;
+            font-size: 10pt; /* Ukuran font standar surat */
+            font-family: 'Times New Roman', serif;
+            color: black;
         }
-        tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
+
+        tr { 
+            page-break-inside: avoid; 
         }
+
+        /* Header Tabel */
         thead { 
             display: table-header-group; 
-            background-color: #f2f2f2 !important; 
-            -webkit-print-color-adjust: exact; 
-            color-adjust: exact; 
         }
-        th, td { border: 1px solid #ccc !important; padding: 4px; }
-        .max-w-sm { max-width: none !important; }
-        .whitespace-normal { white-space: normal !important; }
-        tbody span.rounded-full { background-color: transparent !important; color: black !important; padding: 0 !important; border: none !important; }
+
+        thead th { 
+            background-color: white !important; /* Hilangkan warna background abu */
+            color: black !important;
+            border: 1px solid black !important; /* Border hitam tegas */
+            padding: 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Isi Tabel */
+        tbody td { 
+            border: 1px solid black !important; /* Border hitam tegas */
+            padding: 6px;
+            color: black !important;
+            vertical-align: top;
+        }
+
+        /* Reset Badge Status agar jadi teks biasa */
+        tbody span.rounded-full { 
+            background-color: transparent !important; 
+            color: black !important; 
+            padding: 0 !important; 
+            border: none !important; 
+            font-weight: normal;
+        }
+
+        /* Hilangkan link sorting (panah) */
+        th a {
+            text-decoration: none;
+            color: black !important;
+            pointer-events: none;
+        }
+
+        /* Styling Teks Tambahan */
+        .text-gray-500 { color: black !important; }
+        .text-gray-900 { color: black !important; }
+        .font-medium { font-weight: normal !important; }
+        
+        /* Pastikan teks tidak terpotong */
+        .whitespace-nowrap { white-space: normal !important; }
     }
 </style>
