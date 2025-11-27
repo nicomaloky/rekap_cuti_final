@@ -1,0 +1,142 @@
+/* ===================== */
+/*  Animasi Navbar Halus */
+/* ===================== */
+.animated-navbar {
+    background: linear-gradient(-45deg, #021b79, #0575e6, #1d4ed8, #3b82f6);
+    background-size: 400% 400%;
+    animation: gradient-nav 12s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.animated-navbar:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+@keyframes gradient-nav {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 50% 50%; }
+    50% { background-position: 100% 50%; }
+    75% { background-position: 50% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@media (max-width: 768px) {
+    .animated-navbar {
+        animation-duration: 8s;
+    }
+}
+
+/* ===================== */
+/* Background Blur Login */
+/* ===================== */
+.login-background::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: url('../images/background.png') center / cover fixed no-repeat;
+    filter: blur(5px);
+    -webkit-filter: blur(5px);
+}
+
+/* ===================== */
+/* Suggestion Box        */
+/* ===================== */
+#nama-suggestions {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#nama-suggestions div {
+    padding: 0.75rem;
+    cursor: pointer;
+}
+
+#nama-suggestions div:hover {
+    background-color: #f3f4f6;
+}
+
+/* ===================== */
+/* Style Cetak           */
+/* ===================== */
+.print-only { 
+    display: none; 
+}
+
+@media print {
+    body > nav, 
+    .no-print { 
+        display: none !important; 
+    }
+
+    .print-only { 
+        display: block; 
+    }
+
+    body > main { 
+        padding: 0 !important; 
+        margin: 1cm !important; 
+    }
+
+    .bg-white { 
+        box-shadow: none !important; 
+        border: none !important; 
+        padding: 0 !important; 
+    }
+
+    .table-scroll-container {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        font-size: 9pt; 
+        page-break-inside: auto; 
+    }
+
+    tr { 
+        page-break-inside: avoid; 
+        page-break-after: auto; 
+    }
+
+    thead { 
+        display: table-header-group; 
+        background-color: #f2f2f2 !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+    }
+
+    th, td { 
+        border: 1px solid #ccc !important; 
+        padding: 4px; 
+    }
+
+    .max-w-sm, 
+    .max-w-xs { 
+        max-width: none !important; 
+    }
+
+    .whitespace-normal { 
+        white-space: normal !important; 
+    }
+
+    tbody span.rounded-full { 
+        background-color: transparent !important; 
+        color: black !important; 
+        padding: 0 !important; 
+        border: none !important; 
+    }
+}
