@@ -202,6 +202,77 @@ document.addEventListener('DOMContentLoaded', function() {
         closeAddModalBtn.addEventListener('click', closeAddModal);
         cancelAddBtn.addEventListener('click', closeAddModal);
         addPegawaiModal.addEventListener('click', (e) => { if (e.target === addPegawaiModal) closeAddModal(); });
+        
+        // --- LOGIKA MODAL HISTORY CUTI ---
+        const historyModal = document.getElementById('history-modal');
+        const historyTableBody = document.getElementById('history-table-body');
+        const historyLoading = document.getElementById('history-loading');
+        const historyEmpty = document.getElementById('history-empty');
+        const historyNama = document.getElementById('history-nama-pegawai');
+        
+        // Fungsi helper untuk format tanggal
+        function formatDate(dateString) {
+            if(!dateString) return '-';
+            const date = new Date(dateString);
+            return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+        }
+
+        // Tutup modal history
+        const closeHistoryModal = () => historyModal.classList.add('hidden');
+        document.getElementById('close-history-modal-btn').addEventListener('click', closeHistoryModal);
+        document.getElementById('close-history-btn-bottom').addEventListener('click', closeHistoryModal);
+        historyModal.addEventListener('click', (e) => { if (e.target === historyModal) closeHistoryModal(); });
+
+        // Event listener untuk tombol riwayat
+        document.body.addEventListener('click', async function(event) {
+            if (event.target.classList.contains('history-btn') || event.target.closest('.history-btn')) {
+                const btn = event.target.classList.contains('history-btn') ? event.target : event.target.closest('.history-btn');
+                const pegawaiId = btn.dataset.id;
+                
+                // Reset dan Tampilkan Modal
+                historyModal.classList.remove('hidden');
+                historyTableBody.innerHTML = '';
+                historyLoading.classList.remove('hidden');
+                historyEmpty.classList.add('hidden');
+                historyNama.textContent = 'Memuat...';
+
+                try {
+                    const response = await fetch(`api.php?action=get_riwayat_cuti&id=${pegawaiId}`);
+                    const result = await response.json();
+                    
+                    historyLoading.classList.add('hidden');
+                    historyNama.textContent = result.nama;
+
+                    if (result.data && result.data.length > 0) {
+                        result.data.forEach(cuti => {
+                            const tr = document.createElement('tr');
+                            
+                            // Badge Status
+                            let statusBadge = '';
+                            if (cuti.pertimbangan_atasan === 'Disetujui') statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Disetujui</span>';
+                            else if (cuti.pertimbangan_atasan === 'Tidak Disetujui') statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Ditolak</span>';
+                            else statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">' + (cuti.pertimbangan_atasan || 'Menunggu') + '</span>';
+
+                            tr.innerHTML = `
+                                <td class="px-4 py-2 whitespace-nowrap text-gray-900">${cuti.nama_cuti}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-gray-500">${formatDate(cuti.tgl_mulai)} - ${formatDate(cuti.tgl_selesai)}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-center text-gray-900">${cuti.lama_cuti} hari</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-gray-500 max-w-xs truncate" title="${cuti.alasan_cuti}">${cuti.alasan_cuti}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-center">${statusBadge}</td>
+                            `;
+                            historyTableBody.appendChild(tr);
+                        });
+                    } else {
+                        historyEmpty.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error fetching history:', error);
+                    historyLoading.classList.add('hidden');
+                    historyEmpty.textContent = 'Gagal memuat data.';
+                    historyEmpty.classList.remove('hidden');
+                }
+            }
+        });
     }
 
     // --- LOGIKA SEMUA POPUP (DIPERBARUI & DIGABUNG) ---
@@ -262,8 +333,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener terpusat untuk semua tombol edit
     document.body.addEventListener('click', async function(event) {
         // Jika tombol edit cuti yang diklik
-        if (event.target.classList.contains('edit-cuti-btn')) {
-            const cutiId = event.target.dataset.id;
+        if (event.target.classList.contains('edit-cuti-btn') || event.target.closest('.edit-cuti-btn')) {
+            const btn = event.target.classList.contains('edit-cuti-btn') ? event.target : event.target.closest('.edit-cuti-btn');
+            const cutiId = btn.dataset.id;
             try {
                 const response = await fetch(`api.php?action=get_cuti_detail&id=${cutiId}`);
                 const data = await response.json();

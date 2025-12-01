@@ -77,6 +77,44 @@ function get_pegawai_detail($conn) {
     $stmt->close();
 }
 
+// --- FUNGSI BARU: Get Riwayat Cuti ---
+function get_riwayat_cuti($conn) {
+    $pegawai_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    
+    // 1. Ambil Nama Pegawai
+    $sql_nama = "SELECT nama FROM pegawai WHERE id = ?";
+    $stmt_nama = $conn->prepare($sql_nama);
+    $stmt_nama->bind_param("i", $pegawai_id);
+    $stmt_nama->execute();
+    $res_nama = $stmt_nama->get_result();
+    $nama_pegawai = $res_nama->fetch_assoc()['nama'] ?? 'Pegawai';
+    $stmt_nama->close();
+
+    // 2. Ambil Riwayat Cuti
+    $sql = "SELECT c.*, jc.nama_cuti 
+            FROM cuti c 
+            LEFT JOIN jenis_cuti jc ON c.jenis_cuti_id = jc.id 
+            WHERE c.pegawai_id = ? AND c.is_deleted = 0 
+            ORDER BY c.tgl_pengajuan DESC";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $pegawai_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $riwayat = [];
+    while ($row = $result->fetch_assoc()) {
+        $riwayat[] = $row;
+    }
+    
+    echo json_encode([
+        'nama' => $nama_pegawai,
+        'data' => $riwayat
+    ]);
+    $stmt->close();
+}
+
+// Router Action
 switch ($action) {
     case 'search_pegawai':
         search_pegawai($conn);
@@ -89,6 +127,9 @@ switch ($action) {
         break;
     case 'get_pegawai_detail':
         get_pegawai_detail($conn);
+        break;
+    case 'get_riwayat_cuti': // Pastikan case ini ada!
+        get_riwayat_cuti($conn);
         break;
     default:
         echo json_encode(['error' => 'No action specified']);

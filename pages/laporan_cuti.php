@@ -123,9 +123,9 @@ $total_records = count($all_data);
 
     <!-- Header Cetak (Hanya muncul saat print) -->
     <div class="print-only text-center mb-4">
-        <h2 style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">DINAS PENDIDIKAN KOTA BOGOR</h2>
-        <h3 style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">BIDANG SMP</h3>
-        <h4 style="font-size: 12pt; font-weight: bold; margin-bottom: 20px;">LAPORAN REKAP CUTI PEGAWAI</h4>
+        <h2 style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">PEMERINTAH KOTA BOGOR</h2>
+        <h3 style="font-size: 14pt; font-weight: bold; margin-bottom: 5px;">DINAS PENDIDIKAN</h3>
+        <h4 style="font-size: 12pt; font-weight: bold; margin-bottom: 20px;">LAPORAN REKAPITULASI CUTI PEGAWAI</h4>
         <p style="text-align: left; margin-bottom: 5px;">Dicetak pada: <?php echo date('d F Y'); ?></p>
         <hr style="border: 1px solid black; margin-bottom: 20px;">
     </div>
@@ -165,12 +165,12 @@ $total_records = count($all_data);
                             <!-- Isi Kolom Dokumen (Hanya Tampil di Web) -->
                             <td class="px-3 py-2 whitespace-nowrap text-center align-top no-print">
                                 <?php if (!empty($row['bukti_cuti'])): ?>
-                                    <a href="uploads/bukti_cuti/<?php echo htmlspecialchars($row['bukti_cuti']); ?>" 
-                                       target="_blank" 
-                                       class="text-blue-600 hover:text-blue-800 underline text-xs font-bold flex flex-col items-center transition duration-150 ease-in-out" title="Lihat Dokumen">
+                                    <button type="button" 
+                                            onclick="openDocumentModal('uploads/bukti_cuti/<?php echo htmlspecialchars($row['bukti_cuti']); ?>', '<?php echo pathinfo($row['bukti_cuti'], PATHINFO_EXTENSION); ?>')"
+                                            class="text-blue-600 hover:text-blue-800 underline text-xs font-bold flex flex-col items-center transition duration-150 ease-in-out" title="Lihat Dokumen">
                                         <i class="fas fa-file-alt text-lg mb-1"></i>
                                         Lihat
-                                    </a>
+                                    </button>
                                 <?php else: ?>
                                     <span class="text-gray-400 text-xs">-</span>
                                 <?php endif; ?>
@@ -193,14 +193,18 @@ $total_records = count($all_data);
                                 ?>
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?php echo $badge_color; ?>"><?php echo $status; ?></span>
                             </td>
+                            <!-- UPDATE: Mengubah Tombol Aksi Menjadi Teks -->
                             <td class="px-3 py-2 whitespace-nowrap font-medium flex items-center space-x-2 no-print align-top">
-                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-cuti-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100 transition duration-150 ease-in-out" title="Edit">
-                                    <i class="fas fa-edit"></i>
+                                <!-- Tombol Edit (Teks) -->
+                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-cuti-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100 transition duration-150 ease-in-out">
+                                    Edit
                                 </button>
+                                
+                                <!-- Tombol Hapus (Teks) -->
                                 <form action="hapus_cuti.php" method="POST" class="inline delete-form">
                                     <input type="hidden" name="cuti_id" value="<?php echo $row['id']; ?>">
-                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="cuti" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100 transition duration-150 ease-in-out" title="Hapus">
-                                        <i class="fas fa-trash-alt"></i>
+                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="cuti" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100 transition duration-150 ease-in-out">
+                                        Hapus
                                     </button>
                                 </form>
                             </td>
@@ -216,9 +220,34 @@ $total_records = count($all_data);
     </div>
 </div>
 
-<!-- Modal Edit & Hapus (Sama seperti sebelumnya, tidak diubah) -->
+<!-- Modal Pratinjau Dokumen -->
+<div id="document-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center no-print">
+    <div class="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 my-8 flex flex-col max-h-[90vh]">
+        <!-- Header Modal -->
+        <div class="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+            <h3 class="text-lg font-semibold text-gray-900">Pratinjau Dokumen</h3>
+            <div class="flex items-center space-x-2">
+                <a id="download-doc-btn" href="#" download class="text-blue-600 hover:text-blue-800 px-3 py-1 rounded border border-blue-600 hover:bg-blue-50 text-sm font-medium transition">
+                    <i class="fas fa-download mr-1"></i> Unduh
+                </a>
+                <button type="button" onclick="closeDocumentModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded hover:bg-gray-200 transition">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Konten Dokumen -->
+        <div class="flex-1 p-4 overflow-auto bg-gray-100 flex items-center justify-center min-h-[300px]" id="doc-content-area">
+            <!-- Konten akan dimuat di sini via JS -->
+            <p class="text-gray-500">Memuat dokumen...</p>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Edit Cuti -->
-<div id="edit-cuti-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden no-print">
+<div id="edit-cuti-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden no-print z-40">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="flex justify-between items-center border-b pb-3">
@@ -276,7 +305,7 @@ $total_records = count($all_data);
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div id="delete-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden no-print">
+<div id="delete-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden no-print z-40">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-2xl rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-200">
@@ -298,6 +327,72 @@ $total_records = count($all_data);
     </div>
 </div>
 
+<!-- Script Tambahan untuk Modal Dokumen -->
+<script>
+    function openDocumentModal(fileUrl, fileExt) {
+        const modal = document.getElementById('document-modal');
+        const contentArea = document.getElementById('doc-content-area');
+        const downloadBtn = document.getElementById('download-doc-btn');
+        
+        // Reset konten
+        contentArea.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-2"></i><p class="text-gray-600">Memuat...</p></div>';
+        
+        // Setup tombol unduh
+        downloadBtn.href = fileUrl;
+        
+        // Tampilkan modal
+        modal.classList.remove('hidden');
+        
+        // Tentukan cara menampilkan berdasarkan ekstensi file
+        setTimeout(() => {
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExt.toLowerCase())) {
+                contentArea.innerHTML = `<img src="${fileUrl}" alt="Bukti Cuti" class="max-w-full max-h-[70vh] rounded shadow-md object-contain">`;
+            } else if (fileExt.toLowerCase() === 'pdf') {
+                contentArea.innerHTML = `<iframe src="${fileUrl}" class="w-full h-[70vh] rounded shadow-md border-0" title="Pratinjau PDF"></iframe>`;
+            } else {
+                contentArea.innerHTML = `
+                    <div class="text-center p-8 bg-white rounded shadow">
+                        <i class="fas fa-file-alt text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-800 font-medium mb-2">Format file tidak mendukung pratinjau langsung.</p>
+                        <p class="text-gray-500 text-sm mb-6">Silakan unduh file untuk melihat isinya.</p>
+                        <a href="${fileUrl}" download class="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                            <i class="fas fa-download mr-2"></i> Unduh File
+                        </a>
+                    </div>
+                `;
+            }
+        }, 300);
+    }
+
+    function closeDocumentModal() {
+        const modal = document.getElementById('document-modal');
+        const contentArea = document.getElementById('doc-content-area');
+        
+        modal.classList.add('hidden');
+        // Bersihkan konten iframe/img agar tidak memakan memori/bandwidth di background
+        setTimeout(() => {
+            contentArea.innerHTML = '';
+        }, 300);
+    }
+
+    // Menutup modal saat klik di luar area konten (overlay)
+    document.getElementById('document-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDocumentModal();
+        }
+    });
+    
+    // Menutup dengan tombol ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('document-modal');
+            if (!modal.classList.contains('hidden')) {
+                closeDocumentModal();
+            }
+        }
+    });
+</script>
+
 <!-- CSS Khusus untuk Mencetak (Diperbarui untuk tampilan standar resmi) -->
 <style>
     .print-only { display: none; }
@@ -308,13 +403,16 @@ $total_records = count($all_data);
             margin: 1cm;
         }
 
-        /* Sembunyikan elemen navigasi dan tombol yang tidak perlu */
+        /* Sembunyikan elemen navigasi, tombol, dan modal */
         body > nav, 
         .no-print, 
         #filter-form,
         .edit-cuti-btn,
         .delete-btn,
-        .table-scroll-container::-webkit-scrollbar { 
+        .table-scroll-container::-webkit-scrollbar,
+        #document-modal,
+        #edit-cuti-modal,
+        #delete-confirm-modal { 
             display: none !important; 
         }
 

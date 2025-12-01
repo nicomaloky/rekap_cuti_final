@@ -38,17 +38,14 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
         <h1 class="text-2xl font-bold text-gray-800">Data Pegawai</h1>
         <div class="flex space-x-2">
             <button id="btn-show-import-form" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-md flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                Import CSV
+                <i class="fas fa-file-csv mr-2"></i> Import CSV
             </button>
             <button id="btn-show-add-form"
                 class="bg-blue-800 hover:bg-blue-950 text-white font-bold py-2 px-4 rounded shadow-md">
-                + Input Pegawai Baru
+                <i class="fas fa-plus mr-1"></i> Input Pegawai Baru
             </button>
         </div>
     </div>
-
-    
 
     <!-- Baris bawah: Form + Total -->
     <div class="flex justify-between items-end mb-8">
@@ -64,16 +61,13 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
                     value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                 <button type="submit"
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-blue-800 hover:bg-blue-900 focus:outline-none">
-                    Cari
+                    <i class="fas fa-search mr-1"></i>
                 </button>
             </div>
         </form>
 
         <div class="ml-4 bg-gray-100 border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 whitespace-nowrap shadow-sm flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-800 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M5.121 17.804A8.966 8.966 0 0112 15c2.21 0 4.21.804 5.879 2.137M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <i class="fas fa-users text-blue-800 mr-2"></i>
             Total Pegawai: <?php echo $total_pegawai; ?>
         </div>
     </div>
@@ -88,7 +82,7 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLink('unit_kerja', 'Unit Kerja', $sort_key, $sort_order); ?></th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLink('tmt_pensiun', 'Masa Akhir Kontrak/BUP', $sort_key, $sort_order); ?></th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"><?php echo generateSortLink('sisa_cuti', 'Sisa Cuti Tahunan', $sort_key, $sort_order); ?></th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -142,10 +136,18 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold <?php echo ($row['sisa_cuti'] <= 3 ? 'text-red-600' : 'text-green-600'); ?>"><?php echo $row['sisa_cuti']; ?> hari</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center space-x-2">
-                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-pegawai-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100">Edit</button>
+                                <!-- Tombol History -->
+                                <button type="button" data-id="<?php echo $row['id']; ?>" class="history-btn text-blue-600 hover:text-blue-900 px-2 py-1 rounded-md hover:bg-blue-100 transition" title="Lihat Riwayat Cuti">
+                                    <i class="fas fa-history"></i> Riwayat
+                                </button>
+                                <button type="button" data-id="<?php echo $row['id']; ?>" class="edit-pegawai-btn text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-100 transition">
+                                    Edit
+                                </button>
                                 <form action="hapus_pegawai.php" method="POST" class="inline delete-form">
                                     <input type="hidden" name="pegawai_id" value="<?php echo $row['id']; ?>">
-                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="pegawai" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100">Hapus</button>
+                                    <button type="button" data-nama="<?php echo htmlspecialchars($row['nama'], ENT_QUOTES); ?>" data-type="pegawai" class="delete-btn text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-100 transition">
+                                        Hapus
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -161,8 +163,51 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
     </div>
 </div>
 
+<!-- Modal History Cuti (BARU) -->
+<div id="history-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+    <div class="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 my-8 flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-lg">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">Riwayat Cuti Pegawai</h3>
+                <p id="history-nama-pegawai" class="text-sm text-gray-600 font-medium"></p>
+            </div>
+            <button id="close-history-modal-btn" type="button" class="text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded hover:bg-gray-200 transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Content Table -->
+        <div class="flex-1 p-4 overflow-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Cuti</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Lama</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alasan</th>
+                        <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body" class="bg-white divide-y divide-gray-200 text-sm">
+                    <!-- Data akan dimuat via JS -->
+                </tbody>
+            </table>
+            <div id="history-loading" class="text-center py-4 text-gray-500 hidden">Memuat data...</div>
+            <div id="history-empty" class="text-center py-4 text-gray-500 hidden">Belum ada riwayat cuti.</div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-4 border-t bg-gray-50 rounded-b-lg text-right">
+            <button id="close-history-btn-bottom" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Input via CSV -->
-<div id="import-csv-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+<div id="import-csv-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center border-b pb-3">
@@ -198,7 +243,7 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
 </div>
 
 <!-- Modal Input Pegawai Baru -->
-<div id="add-pegawai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+<div id="add-pegawai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center border-b pb-3">
@@ -252,7 +297,7 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
 </div>
 
 <!-- Modal Edit Pegawai -->
-<div id="edit-pegawai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+<div id="edit-pegawai-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex justify-between items-center border-b pb-3">
@@ -295,7 +340,7 @@ $total_pegawai = $result_total->fetch_assoc()['total'];
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div id="delete-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+<div id="delete-confirm-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-2xl rounded-md bg-white">
         <div class="mt-3 text-center">
             <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-200">
@@ -414,7 +459,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (event.target.classList.contains('edit-pegawai-btn')) {
                 const pegawaiId = event.target.dataset.id;
                 try {
-                    // Anda perlu membuat file api.php untuk mengambil detail pegawai
                     const response = await fetch(`api.php?action=get_pegawai_detail&id=${pegawaiId}`);
                     const data = await response.json();
                     if (data.error) { alert(data.error); return; }
